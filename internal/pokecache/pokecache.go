@@ -15,11 +15,11 @@ type cacheEntry struct {
 	val []byte
 }
 
-func NewCache(interval time.Duration) Cache {
+func NewCache(interval time.Duration) *Cache {
 	c := Cache{
 		entries: make(map[string]cacheEntry),
 	}
-	c.reapLoop()
+	go c.reapLoop(interval)
 	return &c
 }
 
@@ -41,5 +41,15 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 	}
 }
 
-func (c *Cache) reapLoop() {
-	
+func (c *Cache) reapLoop(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	for range ticker.C {
+		c.mu.Lock()
+		for key, val := range c.entries {
+			if time.Now().Sub(val.createdAt) > interval {
+				delete(c.entries, key)
+			}
+		}
+		c.mu.Unlock()
+	}
+}
