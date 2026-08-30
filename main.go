@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -12,7 +13,7 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*config) error
+	callback    func(*config, ...string) error
 }
 
 type config struct {
@@ -22,18 +23,18 @@ type config struct {
 	previousURL   *string
 }
 
-func commandExit(cfg *config) error {
+func commandExit(cfg *config, args ...string) error {
 	fmt.Print("Closing the Pokedex... Goodbye!\n")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(cfg *config) error {
+func commandHelp(cfg *config, args ...string) error {
 	fmt.Printf("Welcome to the Pokedex!\nUsage:\n\nhelp: Displays a help message\nexit: Exit the Pokedex\n")
 	return nil
 }
 
-func commandMap(cfg *config) error {
+func commandMap(cfg *config, args ...string) error {
 	locations, err := cfg.pokeapiClient.ListLocations(cfg.nextURL)
 	if err != nil {
 		return err
@@ -49,7 +50,7 @@ func commandMap(cfg *config) error {
 	return nil
 }
 
-func commandMapb(cfg *config) error {
+func commandMapb(cfg *config, args ...string) error {
 	if cfg.previousURL == nil {
 		fmt.Print("You're on the first page, no previous locations\n")
 		return nil
@@ -70,10 +71,32 @@ func commandMapb(cfg *config) error {
 	return nil
 }
 
+func commandExplore(cfg *config, args ...string) error {
+	if len(args) == 0 {
+		return errors.New("you must provide a location area name")
+	}
+	areaName := args[0]
+
+	fmt.Printf("Exploring %s...\n", areaName)
+
+	locationArea, err := cfg.pokeapiClient.GetLocationArea(areaName)
+	if err != nil {
+		return err
+	}
+
+	fmt.Print("Found Pokemon:\n")
+	for _, encounter := range locationArea.PokemonEncounters {
+		fmt.Printf(" - %s\n", encounter.Pokemon.Name)
+	}
+
+	return nil
+}
+
 func main() {
-	interval := 5 * time.Second
-	c := pokecache.NewCache(interval)
-	pokeClient := pokeapi.NewClient(interval, c)
+	cacheTTL := 5 * time.Minute
+	httpTimeout := 5 * time.Second
+	c := pokecache.NewCache(cacheTTL)
+	pokeClient := pokeapi.NewClient(httpTimeout, c)
 
 	commands := map[string]cliCommand{
 		"exit": {
@@ -95,6 +118,11 @@ func main() {
 			name:        "mapb",
 			description: "Displays the names of the previous 20 location areas",
 			callback:    commandMapb,
+		},
+		"explore": {
+			name:        "explore",
+			description: "Takes an input of area name and returns the name of the pokempn found there",
+			callback:    commandExplore,
 		},
 	}
 

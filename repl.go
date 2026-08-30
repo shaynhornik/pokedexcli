@@ -19,13 +19,14 @@ func startRepl(cfg *config) {
 			continue
 		}
 		firstWord := words[0]
+		args := words[1:]
 		command, ok := cfg.commands[firstWord]
 		if !ok {
 			fmt.Print("Unknown command\n")
 		} else {
-			err := command.callback(cfg)
+			err := command.callback(cfg, args...)
 			if err != nil {
-				fmt.Printf("Error: %v", err)
+				fmt.Printf("Error: %v\n", err)
 			}
 		}
 	}
