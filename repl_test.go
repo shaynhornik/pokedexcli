@@ -6,19 +6,19 @@ import (
 
 func TestCleanInput(t *testing.T) {
 	cases := []struct {
-		input string
+		input    string
 		expected []string
 	}{
 		{
-			input: " hello world ",
+			input:    " hello world ",
 			expected: []string{"hello", "world"},
 		},
 		{
-			input: "Charmander Bulbasaur PIKACHU",
+			input:    "Charmander Bulbasaur PIKACHU",
 			expected: []string{"charmander", "bulbasaur", "pikachu"},
 		},
 		{
-			input: "This, Is, A, Test, Of, All, Commas,",
+			input:    "This, Is, A, Test, Of, All, Commas,",
 			expected: []string{"this,", "is,", "a,", "test,", "of,", "all,", "commas,"},
 		},
 	}
@@ -37,5 +37,3 @@ func TestCleanInput(t *testing.T) {
 		}
 	}
 }
-
-

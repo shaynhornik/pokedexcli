@@ -5,7 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/bootdotdev/pokedexcli/internal/pokeapi"
+	"pokedexcli/internal/pokeapi"
+	"pokedexcli/internal/pokecache"
 )
 
 type cliCommand struct {
@@ -15,10 +16,10 @@ type cliCommand struct {
 }
 
 type config struct {
-	commands         map[string]cliCommand
-	pokeapiClient    pokeapi.Client
-	nextURL          *string
-	previousURL      *string
+	commands      map[string]cliCommand
+	pokeapiClient pokeapi.Client
+	nextURL       *string
+	previousURL   *string
 }
 
 func commandExit(cfg *config) error {
@@ -70,7 +71,9 @@ func commandMapb(cfg *config) error {
 }
 
 func main() {
-	pokeClient := pokeapi.NewClient(5 * time.Second)
+	interval := 5 * time.Second
+	c := pokecache.NewCache(interval)
+	pokeClient := pokeapi.NewClient(interval, c)
 
 	commands := map[string]cliCommand{
 		"exit": {

@@ -35,7 +35,7 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 	value, ok := c.entries[key]
 	c.mu.Unlock()
 	if ok {
-		return value, true
+		return value.val, true
 	} else {
 		return nil, false
 	}
