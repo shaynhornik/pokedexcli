@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -21,6 +22,7 @@ type config struct {
 	pokeapiClient pokeapi.Client
 	nextURL       *string
 	previousURL   *string
+	pokedex       map[string]pokeapi.Pokemon
 }
 
 func commandExit(cfg *config, args ...string) error {
@@ -92,6 +94,31 @@ func commandExplore(cfg *config, args ...string) error {
 	return nil
 }
 
+func commandCatch(cfg *config, args ...string) error {
+	if len(args) == 0 {
+		return errors.New("you must provide a pokemon name")
+	}
+	pokemonName := args[0]
+
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemonName)
+
+	pokemon, err := cfg.pokeapiClient.GetPokemon(pokemonName)
+	if err != nil {
+		return err
+	}
+
+	catchChance := rand.Intn(pokemon.BaseExperience + 100)
+
+	if catchChance < 50 {
+		cfg.pokedex[pokemon.Name] = pokemon
+		fmt.Printf("%s was caught!\n", pokemon.Name)
+	} else {
+		fmt.Printf("%s escaped!\n", pokemon.Name)
+	}
+
+	return nil
+}
+
 func main() {
 	cacheTTL := 5 * time.Minute
 	httpTimeout := 5 * time.Second
@@ -124,11 +151,17 @@ func main() {
 			description: "Takes an input of area name and returns the name of the pokempn found there",
 			callback:    commandExplore,
 		},
+		"catch": {
+			name:        "catch",
+			description: "Takes a pokemon name and throws a pokeball at it, catching it adds it to your pokedex",
+			callback:    commandCatch,
+		},
 	}
 
 	cfg := config{
 		commands:      commands,
 		pokeapiClient: pokeClient,
+		pokedex:       make(map[string]pokeapi.Pokemon),
 	}
 
 	startRepl(&cfg)
